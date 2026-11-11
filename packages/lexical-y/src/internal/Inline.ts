@@ -73,12 +73,6 @@ export class Atoms {
   /** The old items of marker / run-end atoms (old atoms only). */
   items = new Map<number, Item>();
   /**
-   * The id of the stored character each atom is (`client:clock`), where set
-   * to an array before old atoms are read (see readAtoms): what identifies a
-   * character wherever it moves (see Writer#heldIds).
-   */
-  ids: string[] | null = null;
-  /**
    * Where each text range comes from (desired atoms only): the text node it
    * was in before this update. The diff keeps an old character only for the
    * same origin, so text that moved between nodes or lines is never built
@@ -447,7 +441,6 @@ export function readAtoms(
           let pos = 0;
           for (const [len, isHidden] of runs) {
             if (!isHidden) {
-              pushIds(out, it, pos, len);
               pushStoredText(out, content.str.slice(pos, pos + len), attrs);
             }
             pos += len;
@@ -456,7 +449,6 @@ export function readAtoms(
         continue;
       }
     }
-    pushIds(out, it, 0, it.length);
     if (content instanceof ContentString) {
       pushStoredText(out, content.str, attrs);
     } else if (content instanceof ContentType) {
@@ -483,17 +475,6 @@ export function readAtoms(
     end.folded = stored.pending;
   }
   return current;
-}
-
-/** Note the ids of `len` characters of `it` from `from` (see Atoms.ids). */
-function pushIds(out: Atoms, it: Item, from: number, len: number): void {
-  const ids = out.ids;
-  if (ids !== null) {
-    const prefix = it.id.client + ':';
-    for (let i = 0; i < len; i++) {
-      ids.push(prefix + (it.id.clock + from + i));
-    }
-  }
 }
 
 /**
